@@ -19,21 +19,50 @@ public:
 	ini_parser() = delete;
 	ini_parser& operator=(const ini_parser&) = delete;
 	ini_parser(const ini_parser&) = delete;
-
-	template<typename T>
-	T get_value(string val_name) {
+	
+	template <typename T>
+	T get_value(string val_name) {};
+	template<>
+	int get_value(string val_name) {
 		if (val.count(val_name) > 0) {
-			T res = get<T>(val[val_name]);
+			if (regex_match(val[val_name], regex("[+-]?[0-9]+")) || regex_match(val[val_name], regex("[+-]?[0-9]+[.]?[0-9]+"))) {
+				int res = stoi(val[val_name]);
+				return res;
+			}
+			else throw runtime_error("Value int is not found!");
+		}
+		else {
+			throw runtime_error(val_name + " is not found");
+		}
+	}
+	template<>
+	double get_value(string val_name) {
+		if (val.count(val_name) > 0) {
+			if (regex_match(val[val_name], regex("[+-]?[0-9]+")) || regex_match(val[val_name], regex("[+-]?[0-9]+[.]?[0-9]+"))) {
+				double res = stod(val[val_name]);
+				return res;
+			}
+			else throw runtime_error("Value double is not found!");
+		}
+		else {
+			throw runtime_error(val_name + " is not found");
+		}
+	}
+	template<>
+	string get_value(string val_name) {
+		if (val.count(val_name) > 0) {
+			string res = val[val_name];
 			return res;
 		}
 		else {
 			throw runtime_error(val_name + " is not found");
 		}
 	}
+	
 private:
 	ifstream fin;
 	string section;
-	map<string, variant<int, double, string>> val;
+	map<string, string> val;
 	void parse() {
 		int line_num = 1;
 		string line;
@@ -56,12 +85,6 @@ private:
 					string name = line.substr(0, ravno);
 					auto value = line.substr((ravno + 1), line.length());
 					if (value == "") { val[(section + "." + name)] = "not value"; }
-					else if (regex_match(value, regex("[+-]?[0-9]+"))) {
-						val[(section + "." + name)] = stoi(value);
-					}
-					else if (regex_match(value, regex("[+-]?[0-9]+[.]?[0-9]+"))) {
-						val[(section + "." + name)] = stod(value);
-					}
 					else {
 						val[(section + "." + name)] = value;
 					}
@@ -80,6 +103,10 @@ int main()
 	try {
 		ini_parser parser("ini_file.ini");
 		auto value = parser.get_value<double>("Section1.var1");
+		cout << "Section1.var1: " << value << "\n";
+		auto value_int = parser.get_value<int>("Section1.var1");
+		cout << "Section1.var1: " << value << "\n";
+		auto value_string = parser.get_value<string>("Section1.var1");
 		cout << "Section1.var1: " << value << "\n";
 		auto value1 = parser.get_value<string>("Section1.var2");
 		cout << "Section1.var2: " << value1 << "\n";
